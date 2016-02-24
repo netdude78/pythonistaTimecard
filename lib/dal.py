@@ -262,10 +262,70 @@ class Dal:
 
 	@synchronized
 	def update(self, table, *args, **kwargs):
+		"""update(table, args, kwargs)
+		
+		Update rows in table.
+
+		first argument after table must be a dictionary of column:value pairs.
+
+		named argument criteria must be an array of tuples in the form: (column, operator, value)
+		Multiple criteria are stitched together with AND.  All criteria must be true in order for 
+		operation to succeed
+
+		Example:
+			update('test', {'firstname':'Frank'}, criteria=[('id', '=', 1)])
+		Decorators:
+			synchronized
+		
+		Arguments:
+			table {[type]} -- [description]
+			*args {[type]} -- [description]
+			**kwargs {[type]} -- [description]
+		
+		Returns:
+			[int] -- [number of rows affected]
+		
+		Raises:
+			ValueError -- [if table name is not specified]
+			ValueError -- [if criteria is not passed] - potentially dangerous update that would change all rows
+		"""
 		if table not in self._db_schema.keys():
 			raise ValueError('Table name specified %s does not exist in DB.' %table)
 
-		pass
+		cur = self._conn.cursor()
+		sql = "UPDATE %s SET" % table
+
+		if args and len(args) == 1 and isinstance(args[0], dict):
+			# fields to update dict is only non keyword arg
+			val_array = []
+			for (col, val) in args[0].items():
+				sql += " %s = ?," % col
+				val_array.append(val)
+			sql = sql.strip(',')
+
+			print "SQL: %s" %sql, val_array
+			if 'criteria' in kwargs.keys():
+				# criteria passed as keword argument
+				num_criteria = len(kwargs['criteria'])
+				x = 0
+				sql += " WHERE "
+				criterium = []
+				print 'kwargs: %s' %kwargs
+				for (field,op,criteria) in kwargs['criteria']:
+					sql += "%s %s ? " % (str(field), str(op))
+					criterium.append(str(criteria))
+					x += 1
+					if x < num_criteria:
+						sql += "AND "
+
+				print "SQL: %s, args: %s" %(sql, criterium)
+
+				
+				cur.execute(sql, val_array + criterium)
+				self._conn.commit()
+				return cur.rowcount
+			else:
+				raise ValueError ("criteria not specified.  Dangerous update aborted.")
 
 	def delete(self, table, *args, **kwargs):
 		if table not in self._db_schema.keys():
