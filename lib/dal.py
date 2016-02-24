@@ -283,6 +283,8 @@ class Dal:
 			ValueError -- [table name missing or not in database]
 		"""
 
+		#TODO: add logic to support select from multiple tables and inner-joins
+
 		if table not in self._db_schema.keys():
 			raise ValueError('Table name specified %s does not exist in DB.' %table)
 		cur = self._conn.cursor()
