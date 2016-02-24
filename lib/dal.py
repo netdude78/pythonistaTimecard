@@ -46,14 +46,14 @@ class Dal:
 	_conn = None
 	_db_schema = None
 
-	def __init__(self, db_file='timecard.db'):
+	def __init__(self, db_file='sqlite.db'):
 		"""
 		Constructor.
 
 		Optional db_file opens a connection to the specified file.
 		
 		Keyword Arguments:
-			db_file {string} -- SQLite3 Database filename (default: {timecard.db})
+			db_file {string} -- SQLite3 Database filename (default: 'sqlite.db')
 		"""
 		self._conn = sqlite3.connect(db_file)
 		
