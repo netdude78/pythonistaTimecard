@@ -185,14 +185,59 @@ class Dal:
 	def get_record_by_id(self, table, *args, **kwargs):
 		if table not in self._db_schema.keys():
 			raise ValueError('Table name specified %s does not exist in DB.' %table)
+		cur = self._conn.cursor()
+		cur.row_factory = self._dict_factory
 
-		pass
+		if not kwargs and len(args) == 1:
+			# should mean the id field is 'id' (default)
+			# and single argument after table is the ID
+
+			sql = "SELECT * from %s WHERE id=?" %table
+			print sql
+			return cur.execute(sql, str(args[0])).fetchall()
+		if kwargs:
+			x_args = dict(kwargs)
+			if 'fields' in x_args:
+				f_list = ""
+				for field in x_args.pop('fields'):
+					f_list += "%s ," %field
+				f_list = f_list.strip(',')
+
+				sql = "SELECT %s from %s " %(f_list, table)
+			print sql
+			return cur.execute(sql).fetchall()
 
 	def search_for_records(self, table, *args, **kwargs):
 		if table not in self._db_schema.keys():
 			raise ValueError('Table name specified %s does not exist in DB.' %table)
+		cur = self._conn.cursor()
+		cur.row_factory = self._dict_factory
 
-		pass
+		if kwargs:
+			x_args = dict(kwargs)
+			if 'fields' in x_args:
+				f_list = ""
+				for field in x_args.pop('fields'):
+					f_list += "%s ," %field
+				f_list = f_list.strip(',')
+				sql = "SELECT %s from %s " %(f_list, table)
+			else:
+				sql = "SELECT * from %s " %table
+
+			num_criteria = len(x_args['criteria'])
+			x = 0
+			sql += "WHERE "
+			criterium = []
+			print 'x_args: %s' %x_args
+			for (field,op,criteria) in x_args['criteria']:
+				sql += "%s %s ? " % (str(field), str(op))
+				criterium.append(str(criteria))
+				x += 1
+				if x < num_criteria:
+					sql += "AND "
+
+			print sql
+			return cur.execute(sql, tuple(criterium)).fetchall()
 
 	def update_record(self, table, *args, **kwargs):
 		if table not in self._db_schema.keys():
@@ -206,6 +251,7 @@ class Dal:
 
 
 		pass
+
 
 	@synchronized
 	def create_table(self, table, fields):
@@ -247,6 +293,7 @@ class Dal:
 		cur.execute(sql)
 		self._conn.commit()
 		self._get_db_schema()
+
 
 	@synchronized
 	def drop_table(self, table):
