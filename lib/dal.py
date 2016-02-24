@@ -74,7 +74,7 @@ class Dal:
 			d[col[0]] = row[idx]
 		return d
 
-	def insert_record(self, table, *args, **kwargs):
+	def insert(self, table, *args, **kwargs):
 		"""
 		Insert a record to the database.  Return the record inserted to the caller if successful.
 		
@@ -100,7 +100,7 @@ class Dal:
 			raise ValueError('Table name specified %s does not exist in DB.' %table)
 
 		@synchronized
-		def insert(table, values, cols=None):
+		def _insert(table, values, cols=None):
 			"""
 			nested insert function
 
@@ -158,11 +158,11 @@ class Dal:
 			if errors:
 				raise ValueError(str(errors))
 
-			return insert(table, values, columns)
+			return _insert(table, values, columns)
 
 		elif args and len(args) == 1 and (isinstance(args[0], list) or isinstance(args[0], tuple)):
 			# a list of values only
-			return insert(table, list(args[0]))
+			return _insert(table, list(args[0]))
 			
 		elif args and len(args) == 1 and isinstance(args[0], dict):
 			# a single dictionary of records supplied without keyword argument
@@ -179,10 +179,10 @@ class Dal:
 			if errors:
 				raise ValueError(str(errors))
 
-			return insert(table, values, columns)
+			return _insert(table, values, columns)
 			
 
-	def get_record_by_id(self, table, *args, **kwargs):
+	def get(self, table, *args, **kwargs):
 		"""get_record_by_id(table, ...)
 		
 		Returns record by specified ID
@@ -229,7 +229,7 @@ class Dal:
 			print sql
 			return cur.execute(sql).fetchall()
 
-	def search_for_records(self, table, *args, **kwargs):
+	def search(self, table, *args, **kwargs):
 		if table not in self._db_schema.keys():
 			raise ValueError('Table name specified %s does not exist in DB.' %table)
 		cur = self._conn.cursor()
@@ -258,21 +258,37 @@ class Dal:
 				if x < num_criteria:
 					sql += "AND "
 
-			print sql
-			return cur.execute(sql, tuple(criterium)).fetchall()
+			return cur.execute(sql, criterium).fetchall()
 
-	def update_record(self, table, *args, **kwargs):
+	@synchronized
+	def update(self, table, *args, **kwargs):
 		if table not in self._db_schema.keys():
 			raise ValueError('Table name specified %s does not exist in DB.' %table)
 
 		pass
 
-	def delete_record(self, table, *args, **kwargs):
+	def delete(self, table, *args, **kwargs):
 		if table not in self._db_schema.keys():
 			raise ValueError('Table name specified %s does not exist in DB.' %table)
 
+		cur = self._conn.cursor()
 
-		pass
+		sql = "DELETE from %s WHERE " % table
+
+		num_criteria = len(kwargs['criteria'])
+		x = 0
+		criterium = []
+		print 'kwargs: %s' %kwargs
+		for (field,op,criteria) in kwargs['criteria']:
+			sql += "%s %s ? " % (str(field), str(op))
+			criterium.append(str(criteria))
+			x += 1
+			if x < num_criteria:
+				sql += "AND "
+
+		cur.execute(sql, criterium)
+		self._conn.commit()
+		return cur.rowcount
 
 
 	@synchronized
