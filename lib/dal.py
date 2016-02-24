@@ -265,6 +265,24 @@ class Dal:
 			return cur.execute(sql).fetchall()
 
 	def search(self, table, *args, **kwargs):
+		"""search(table, fields=(field,field,field, ...), criteria=[(col,op,val), (), ...])
+		
+		Execute select against database table, if specified, list or tuple of columns, will restrict return 
+			results to those columns only.
+		criteria is in the form of a list of 3-tuples (column, operator, value) 
+		
+		Arguments:
+			table {[string]} -- [description]
+			*args {[type]} -- [description]
+			**kwargs {[type]} -- [description]
+		
+		Returns:
+			[list] -- [list of dictionary represented rows]
+		
+		Raises:
+			ValueError -- [table name missing or not in database]
+		"""
+
 		if table not in self._db_schema.keys():
 			raise ValueError('Table name specified %s does not exist in DB.' %table)
 		cur = self._conn.cursor()
@@ -363,8 +381,26 @@ class Dal:
 				raise ValueError ("criteria not specified.  Dangerous update aborted.")
 
 	def delete(self, table, *args, **kwargs):
+		"""delete ('table', criteria=[(col, op, val), (), ...])
+		
+		Delete row(s) from database.  criteria should be in the form of a 3-tuple (column, operator, value)
+		
+		Arguments:
+			table {[string]} -- [table name]
+			*args {[type]} -- [description]
+			**kwargs {[type]} -- [description]
+		
+		Returns:
+			[int] -- [Number of Rows effected]
+		
+		Raises:
+			ValueError -- [table not in database]
+			ValueError -- [criteria missing]
+		"""
 		if table not in self._db_schema.keys():
 			raise ValueError('Table name specified %s does not exist in DB.' %table)
+		if not 'criteria' in kwargs:
+			raise ValueError('ERROR: criteria missing.')
 
 		cur = self._conn.cursor()
 
