@@ -6,6 +6,41 @@ from util import synchronized
 class Dal:
 	"""
 	Class to handle database abstraction for app
+
+	Methods:
+		__init__(db_file)
+			Initialize Database Connection.  db_file is the sqlite db file to use.
+			if the file does not exist, it will be created in the current working directory.
+		insert(table, (val,val,val) | {col:val, col:val...} | record={col:val, col:val})
+			inserts a record into the database.  May be called one of three ways:
+				insert ('table', (val,val,val)):
+					insert values into the table.  Must specify exact number of values IN THE ORDER THEY
+						ARE listed in the database.  second argument may be a list or tuple.
+				insert ('table', record={col:val, col:val, col:val ...})
+					keword argument record should be a dictionary in the form 'column':value
+				insert ('table', {col:val, col:val...})
+					same as above, but instead of a keyword argument, an unnamed dict may be used in the same format
+			returns number of rows effected.
+		get(table, id, id_field='col', fields=['col', 'col', ...])
+
+		search(table, criteria=[(col, operator, value), (col,operator, value), ...], fields=['col', 'col', ...])
+			executes SQL select statement against table sepecified.  Returns rows as list of dictionary elements.
+		update(table, {col:val, col:val, ...}, criteria=[(col, operator, value), (col,operator, value), ...])
+			updates rows
+			returns rows effected by query
+			  This helps prevent executing a dangerous SQL update that
+				otherwise may change every record in the table.  To update all records pass criteria something like:
+				update('table', criteria=[('id', '>', 0)])
+		delete(table, criteria=[(col, operator, value), (col,operator, value), ...])
+			deletes rows. 
+			Returns rows effected by query.
+			Throws error if criteria not specified.
+		create_table(table, fields)
+			creates table specified
+		drop_table(table)
+			drops table specified
+
+	All returned records will be returned in dictionary form.
 	"""
 
 	_conn = None
