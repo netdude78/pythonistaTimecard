@@ -56,7 +56,7 @@ class Dal:
         Keyword Arguments:
                 db_file {string} -- SQLite3 Database filename (default: 'sqlite.db')
         """
-        self._conn = sqlite3.connect(db_file)
+        self._conn = sqlite3.connect(db_file, detect_types=sqlite3.PARSE_DECLTYPES)
 
         # populate schema info
         self._get_db_schema()
@@ -262,7 +262,6 @@ class Dal:
             # and single argument after table is the ID
 
             sql = "SELECT * from %s WHERE id=?" % table
-            print sql
             return cur.execute(sql, str(args_[0])).fetchall()
         if kwargs:
             kwargs_ = dict(kwargs)
@@ -273,7 +272,6 @@ class Dal:
                 f_list = f_list.strip(',')
 
                 sql = "SELECT %s from %s " % (f_list, table)
-            print sql
             return cur.execute(sql).fetchall()
 
     def search(self, table, *args, **kwargs):
@@ -324,7 +322,6 @@ class Dal:
                 x = 0
                 sql += "WHERE "
                 criterium = []
-                print 'kwargs_: %s' % kwargs_
                 for (field, op, criteria) in kwargs_['criteria']:
                     sql += "%s %s ? " % (str(field), str(op))
                     criterium.append(str(criteria))
@@ -382,22 +379,18 @@ class Dal:
                 val_array.append(val)
             sql = sql.strip(',')
 
-            print "SQL: %s" % sql, val_array
             if 'criteria' in kwargs.keys():
                 # criteria passed as keword argument
                 num_criteria = len(kwargs['criteria'])
                 x = 0
                 sql += " WHERE "
                 criterium = []
-                print 'kwargs: %s' % kwargs
                 for (field, op, criteria) in kwargs['criteria']:
                     sql += "%s %s ? " % (str(field), str(op))
                     criterium.append(str(criteria))
                     x += 1
                     if x < num_criteria:
                         sql += "AND "
-
-                print "SQL: %s, args: %s" % (sql, criterium)
 
                 r = self._conn.execute(sql, val_array + criterium)
                 self._conn.commit()
@@ -434,7 +427,6 @@ class Dal:
         num_criteria = len(kwargs['criteria'])
         x = 0
         criterium = []
-        print 'kwargs: %s' % kwargs
         for (field, op, criteria) in kwargs['criteria']:
             sql += "%s %s ? " % (str(field), str(op))
             criterium.append(str(criteria))
