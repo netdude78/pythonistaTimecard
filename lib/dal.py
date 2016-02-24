@@ -301,14 +301,12 @@ class Dal:
         if table not in self._db_schema.keys():
             raise ValueError(
                 'Table name specified %s does not exist in DB.' % table)
-        cur = self._conn.cursor()
-
         args_ = list(args)
         if args_ and 'as-dict' in args_:
             args_.pop(args_.index('as-dict'))
-            cur.row_factory = self._dict_factory
+            self._conn.row_factory = self._dict_factory
         else:
-            cur.row_factory = sqlite3.Row
+            self._conn.row_factory = sqlite3.Row
 
         if kwargs:
             kwargs_ = dict(kwargs)
@@ -334,12 +332,12 @@ class Dal:
                     if x < num_criteria:
                         sql += "AND "
 
-                return cur.execute(sql, criterium).fetchall()
+                return self._conn.execute(sql, criterium).fetchall()
             else:
-                return cur.execute(sql).fetchall()
+                return self._conn.execute(sql).fetchall()
         else:
             sql = "SELECT * from %s" %table
-            return cur.execute(sql).fetchall()
+            return self._conn.execute(sql).fetchall()
 
     @synchronized
     def update(self, table, *args, **kwargs):
@@ -374,7 +372,6 @@ class Dal:
             raise ValueError(
                 'Table name specified %s does not exist in DB.' % table)
 
-        cur = self._conn.cursor()
         sql = "UPDATE %s SET" % table
 
         if args and len(args) == 1 and isinstance(args[0], dict):
@@ -402,9 +399,9 @@ class Dal:
 
                 print "SQL: %s, args: %s" % (sql, criterium)
 
-                cur.execute(sql, val_array + criterium)
+                r = self._conn.execute(sql, val_array + criterium)
                 self._conn.commit()
-                return cur.rowcount
+                return r.rowcount
             else:
                 raise ValueError(
                     "criteria not specified.  Dangerous update aborted.")
@@ -432,8 +429,6 @@ class Dal:
         if not 'criteria' in kwargs:
             raise ValueError('ERROR: criteria missing.')
 
-        cur = self._conn.cursor()
-
         sql = "DELETE from %s WHERE " % table
 
         num_criteria = len(kwargs['criteria'])
@@ -447,9 +442,9 @@ class Dal:
             if x < num_criteria:
                 sql += "AND "
 
-        cur.execute(sql, criterium)
+        r = self._conn.execute(sql, criterium)
         self._conn.commit()
-        return cur.rowcount
+        return r.rowcount
 
     @synchronized
     def create_table(self, table, fields):
@@ -488,8 +483,7 @@ class Dal:
                 sql += ','
         sql += ')'
 
-        cur = self._conn.cursor()
-        cur.execute(sql)
+        self._conn.execute(sql)
         self._conn.commit()
         self._get_db_schema()
 
@@ -507,7 +501,6 @@ class Dal:
         unsafe and care should be taken to avoid SQL injection.
         """
 
-        cur = self._conn.cursor()
-        cur.execute("DROP TABLE %s" % table)
+        self._conn.execute("DROP TABLE %s" % table)
         self._conn.commit()
         self._get_db_schema()
