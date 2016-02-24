@@ -183,6 +183,28 @@ class Dal:
 			
 
 	def get_record_by_id(self, table, *args, **kwargs):
+		"""get_record_by_id(table, ...)
+		
+		Returns record by specified ID
+
+		first arg after table should be the ID value.
+
+		Optionally specify an array of field names like:
+			get_record_by_id('test', 203, fields=['name', 'email'])
+				will return the 'name' and 'email' columns from the test table
+				where ID = 203
+		
+		Arguments:
+			table {[string]} -- [description]
+			*args {[ID]} -- [add ID value]
+			**kwargs {[type]} -- [fields - optional]
+		
+		Returns:
+			[type] -- [description]
+		
+		Raises:
+			ValueError -- [description]
+		"""
 		if table not in self._db_schema.keys():
 			raise ValueError('Table name specified %s does not exist in DB.' %table)
 		cur = self._conn.cursor()
