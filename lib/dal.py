@@ -162,7 +162,6 @@ class Dal:
 			# a list of values only
 			return insert(table, list(args[0]))
 			
-
 		elif args and len(args) == 1 and isinstance(args[0], dict):
 			# a single dictionary of records supplied without keyword argument
 			record = args[0]
@@ -181,17 +180,52 @@ class Dal:
 			return insert(table, values, columns)
 			
 
-	def get_record_by_id(self, *args, **kwargs):
+	def get_record_by_id(self, table, *args, **kwargs):
+		if table not in self._db_schema.keys():
+			raise ValueError('Table name specified %s does not exist in DB.' %table)
+
 		pass
 
-	def search_for_records(self, *args, **kwargs):
+	def search_for_records(self, table, *args, **kwargs):
+		if table not in self._db_schema.keys():
+			raise ValueError('Table name specified %s does not exist in DB.' %table)
+
 		pass
 
-	def update_record(self, *args, **kwargs):
+	def update_record(self, table, *args, **kwargs):
+		if table not in self._db_schema.keys():
+			raise ValueError('Table name specified %s does not exist in DB.' %table)
+
 		pass
 
-	def delete_record(self, *args, **kwargs):
+	def delete_record(self, table, *args, **kwargs):
+		if table not in self._db_schema.keys():
+			raise ValueError('Table name specified %s does not exist in DB.' %table)
+
+
 		pass
+
+	def create_table(self, table, fields):
+		if table in self._db_schema.keys():
+			raise ValueError('Table name specified %s is already in DB.' %table)
+
+		sql = 'CREATE TABLE %s (' %table
+		num_fields = len(fields.keys())
+		i = 0
+		for (k,v) in fields.items():
+			sql += "%s %s" %(k, v)
+			i += 1
+			if i < num_fields:
+				sql += ','
+		sql += ')'
+
+		cur = self._conn.cursor()
+		cur.execute(sql)
+		self._conn.commit()
+
+
+
+
 
 
 
