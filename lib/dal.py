@@ -249,20 +249,26 @@ class Dal:
             raise ValueError(
                 'Table name specified %s does not exist in DB.' % table)
         cur = self._conn.cursor()
-        cur.row_factory = self._dict_factory
 
-        if not kwargs and len(args) == 1:
+        args_ = list(args)
+        if args_ and 'as-dict' in args_:
+            args_.pop(args.index('as-dict'))
+            cur.row_factory = self._dict_factory
+        else:
+            cur.row_factory = sqlite3.Row
+
+        if not kwargs and len(args_) == 1:
             # should mean the id field is 'id' (default)
             # and single argument after table is the ID
 
             sql = "SELECT * from %s WHERE id=?" % table
             print sql
-            return cur.execute(sql, str(args[0])).fetchall()
+            return cur.execute(sql, str(args_[0])).fetchall()
         if kwargs:
-            x_args = dict(kwargs)
-            if 'fields' in x_args:
+            kwargs_ = dict(kwargs)
+            if 'fields' in kwargs_:
                 f_list = ""
-                for field in x_args.pop('fields'):
+                for field in kwargs_.pop('fields'):
                     f_list += "%s ," % field
                 f_list = f_list.strip(',')
 
@@ -296,32 +302,44 @@ class Dal:
             raise ValueError(
                 'Table name specified %s does not exist in DB.' % table)
         cur = self._conn.cursor()
-        cur.row_factory = self._dict_factory
+
+        args_ = list(args)
+        if args_ and 'as-dict' in args_:
+            args_.pop(args_.index('as-dict'))
+            cur.row_factory = self._dict_factory
+        else:
+            cur.row_factory = sqlite3.Row
 
         if kwargs:
-            x_args = dict(kwargs)
-            if 'fields' in x_args:
+            kwargs_ = dict(kwargs)
+            if 'fields' in kwargs_:
                 f_list = ""
-                for field in x_args.pop('fields'):
+                for field in kwargs_.pop('fields'):
                     f_list += "%s ," % field
                 f_list = f_list.strip(',')
                 sql = "SELECT %s from %s " % (f_list, table)
             else:
                 sql = "SELECT * from %s " % table
 
-            num_criteria = len(x_args['criteria'])
-            x = 0
-            sql += "WHERE "
-            criterium = []
-            print 'x_args: %s' % x_args
-            for (field, op, criteria) in x_args['criteria']:
-                sql += "%s %s ? " % (str(field), str(op))
-                criterium.append(str(criteria))
-                x += 1
-                if x < num_criteria:
-                    sql += "AND "
+            if 'criteria' in kwargs_:
+                num_criteria = len(kwargs_['criteria'])
+                x = 0
+                sql += "WHERE "
+                criterium = []
+                print 'kwargs_: %s' % kwargs_
+                for (field, op, criteria) in kwargs_['criteria']:
+                    sql += "%s %s ? " % (str(field), str(op))
+                    criterium.append(str(criteria))
+                    x += 1
+                    if x < num_criteria:
+                        sql += "AND "
 
-            return cur.execute(sql, criterium).fetchall()
+                return cur.execute(sql, criterium).fetchall()
+            else:
+                return cur.execute(sql).fetchall()
+        else:
+            sql = "SELECT * from %s" %table
+            return cur.execute(sql).fetchall()
 
     @synchronized
     def update(self, table, *args, **kwargs):
