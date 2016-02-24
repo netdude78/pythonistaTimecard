@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sqlite3
+from util import synchronized
 
 class Dal:
 	"""
@@ -98,6 +99,7 @@ class Dal:
 		if table not in self._db_schema.keys():
 			raise ValueError('Table name specified %s does not exist in DB.' %table)
 
+		@synchronized
 		def insert(table, values, cols=None):
 			"""
 			nested insert function
@@ -205,6 +207,7 @@ class Dal:
 
 		pass
 
+	@synchronized
 	def create_table(self, table, fields):
 		"""create_table(table, fields)
 		
@@ -221,6 +224,9 @@ class Dal:
 		
 		Raises:
 			ValueError -- [description]
+
+		NOTE: This method should never be called from any web-facing code.  It is potentially
+		unsafe and care should be taken to avoid SQL injection.
 		"""
 		if table in self._db_schema.keys():
 			raise ValueError('Table name specified %s is already in DB.' %table)
@@ -242,6 +248,24 @@ class Dal:
 		self._conn.commit()
 		self._get_db_schema()
 
+	@synchronized
+	def drop_table(self, table):
+		"""
+		drop_table(table)
+		
+		drops table specified
+		
+		Arguments:
+			table {[string]} -- [table name to drop]
+
+		NOTE:  This method should never be called from any web-facing code.  It is potentially
+		unsafe and care should be taken to avoid SQL injection.
+		"""
+
+		cur = self._conn.cursor()
+		cur.execute("DROP TABLE %s" %table)
+		self._conn.commit()
+		self._get_db_schema()
 
 
 
