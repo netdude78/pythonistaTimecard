@@ -206,14 +206,32 @@ class Dal:
 		pass
 
 	def create_table(self, table, fields):
+		"""create_table(table, fields)
+		
+		Fields should be a dictionary:
+			key: column name
+			value: column type and options
+		
+		Arguments:
+			table {[string]} -- [table name]
+			fields {[list of dictionaries]} -- [array of dictionaries:]
+				column_name
+				type
+				options (optional)
+		
+		Raises:
+			ValueError -- [description]
+		"""
 		if table in self._db_schema.keys():
 			raise ValueError('Table name specified %s is already in DB.' %table)
 
 		sql = 'CREATE TABLE %s (' %table
-		num_fields = len(fields.keys())
+		num_fields = len(fields)
 		i = 0
-		for (k,v) in fields.items():
-			sql += "%s %s" %(k, v)
+		for field in fields:
+			sql += "%s %s" %(field['column_name'], field['type'])
+			if 'options' in field:
+				sql += " %s" %field['options']
 			i += 1
 			if i < num_fields:
 				sql += ','
@@ -222,6 +240,7 @@ class Dal:
 		cur = self._conn.cursor()
 		cur.execute(sql)
 		self._conn.commit()
+		self._get_db_schema()
 
 
 
